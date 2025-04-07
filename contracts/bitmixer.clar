@@ -201,3 +201,51 @@
 		)
 	)
 )
+
+;; Public Functions
+(define-public (initialize (threshold uint))
+    (begin
+        (asserts! (not (var-get initialized)) ERR-ALREADY-INITIALIZED)
+        (asserts! (> threshold u0) ERR-INVALID-THRESHOLD)
+        (var-set initialized true)
+        (var-set contract-owner tx-sender)
+        (ok true)
+	)
+)
+
+(define-public (deposit (amount uint))
+    (begin
+        ;; Ensure the amount is greater than zero and within limits
+        (asserts! (> amount u0) ERR-INVALID-AMOUNT)
+        (asserts! (<= amount MAX-TRANSACTION-AMOUNT) ERR-INVALID-AMOUNT)
+
+        ;; Proceed with validations and balance updates
+        (asserts! (var-get initialized) ERR-NOT-INITIALIZED)
+        (asserts! (not (var-get contract-paused)) ERR-CONTRACT-PAUSED)
+        (try! (validate-amount amount))
+        (try! (check-daily-limit tx-sender amount))
+        (update-balance tx-sender amount true)
+        (update-daily-limit tx-sender amount)
+        (ok true)
+	)
+)
+
+
+(define-public (withdraw (amount uint))
+    (begin
+        ;; Existing validation checks
+        (asserts! (> amount u0) ERR-INVALID-AMOUNT)
+        (asserts! (var-get initialized) ERR-NOT-INITIALIZED)
+        (asserts! (not (var-get contract-paused)) ERR-CONTRACT-PAUSED)
+        
+        ;; Existing validation logic
+        (try! (validate-amount amount))
+        (try! (check-daily-limit tx-sender amount))
+        (try! (check-balance tx-sender amount))
+        
+        ;; Transaction execution
+        (update-balance tx-sender amount false)
+        (update-daily-limit tx-sender amount)
+        (ok true)
+	)
+)
