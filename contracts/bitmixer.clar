@@ -304,3 +304,37 @@
                 (ok true)))
 	)
 )
+
+(define-public (setup-multi-sig (wallet-principal principal) 
+                               (threshold uint) 
+                               (signers (list 10 principal)))
+    (begin
+        ;; Add explicit validation for wallet-principal
+        (try! (validate-pool-principal wallet-principal))
+        
+        ;; Existing validations
+        (asserts! (var-get initialized) ERR-NOT-INITIALIZED)
+        (asserts! (not (var-get contract-paused)) ERR-CONTRACT-PAUSED)
+        (asserts! (> threshold u0) ERR-INVALID-THRESHOLD)
+        (asserts! (<= threshold (len signers)) ERR-INVALID-THRESHOLD)
+        
+        ;; Additional checks for signers
+        (asserts! (not (is-some (index-of signers wallet-principal))) 
+            ERR-INVALID-SIGNATURE)
+        
+        ;; Check for duplicate signers
+        (asserts! (not (get found-duplicate (has-duplicate-signers signers))) 
+            ERR-DUPLICATE-SIGNER)
+        
+        (map-set multi-sig-wallets wallet-principal
+            {threshold: threshold,
+             total-signers: (len signers),
+             active: true,
+             last-activity: block-height})
+        
+        (map-set signer-permissions
+            {wallet: wallet-principal, signer: tx-sender}
+            true)
+        (ok true)
+	)
+)
