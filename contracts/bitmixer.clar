@@ -113,3 +113,47 @@
         (ok true)
 	)
 )
+
+(define-private (validate-pool-principal (wallet principal))
+    (begin
+        (asserts! (not (is-eq wallet tx-sender)) ERR-NOT-AUTHORIZED)
+        (ok true)
+	)
+)
+
+(define-private (check-daily-limit (user principal) (amount uint))
+    (let ((current-day (/ block-height u144))
+          (current-total (default-to u0 
+            (map-get? daily-limits {user: user, day: current-day}))))
+        (asserts! (<= (+ current-total amount) MAX-DAILY-LIMIT) 
+            ERR-DAILY-LIMIT-EXCEEDED)
+        (ok true)
+	)
+)
+
+(define-private (update-daily-limit (user principal) (amount uint))
+    (let ((current-day (/ block-height u144)))
+        (map-set daily-limits 
+            {user: user, day: current-day}
+            (+ (default-to u0 
+                (map-get? daily-limits {user: user, day: current-day}))
+               amount))
+	)
+)
+
+(define-private (check-cooling-period (wallet principal))
+    (let ((wallet-data (unwrap! (map-get? multi-sig-wallets wallet) ERR-NOT-AUTHORIZED)))
+        (asserts! (>= block-height (+ (get last-activity wallet-data) COOLING-PERIOD))
+            ERR-COOLING-PERIOD)
+        (ok true)
+	)
+)
+
+;; Private Functions - Core Logic
+(define-private (check-balance (user principal) (amount uint))
+    (let ((current-balance (default-to u0 (map-get? balances user))))
+        (if (>= current-balance amount)
+            (ok true)
+            ERR-INSUFFICIENT-BALANCE)
+	)
+)
