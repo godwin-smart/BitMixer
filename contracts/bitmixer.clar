@@ -72,3 +72,44 @@
      participant-list: (list 100 principal),
      active: bool}
 )
+
+(define-map multi-sig-wallets 
+    principal 
+    {threshold: uint, 
+     total-signers: uint,
+     active: bool,
+     last-activity: uint}
+)
+
+(define-map signer-permissions 
+    {wallet: principal, signer: principal} 
+    bool
+)
+
+(define-map pending-transactions 
+    uint 
+    {sender: principal,
+     recipient: principal,
+     amount: uint,
+     signatures: uint,
+     signers: (list 10 principal),
+     created-at: uint,
+     executed: bool}
+)
+
+;; Private Functions - Input Validation
+(define-private (validate-amount (amount uint))
+    (begin
+        (asserts! (> amount u0) ERR-INVALID-AMOUNT)
+        (asserts! (<= amount MAX-TRANSACTION-AMOUNT) ERR-INVALID-AMOUNT)
+        (ok true)
+	)
+)
+
+(define-private (validate-pool-id (pool-id uint))
+    (begin
+        (asserts! (< pool-id MAX-POOL-ID) ERR-INVALID-MIXER-POOL)
+        (asserts! (is-none (map-get? mixer-pools pool-id)) ERR-POOL-EXISTS)
+        (ok true)
+	)
+)
