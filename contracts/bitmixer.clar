@@ -338,3 +338,38 @@
         (ok true)
 	)
 )
+
+;; Emergency Functions
+(define-public (pause-contract)
+    (begin
+        (asserts! (is-eq tx-sender (var-get contract-owner)) ERR-NOT-AUTHORIZED)
+        (var-set contract-paused true)
+        (ok true)
+	)
+)
+
+(define-public (unpause-contract)
+    (begin
+        (asserts! (is-eq tx-sender (var-get contract-owner)) ERR-NOT-AUTHORIZED)
+        (var-set contract-paused false)
+        (ok true)
+	)
+)
+
+;; Read-Only Functions
+(define-read-only (get-balance (user principal))
+    (default-to u0 (map-get? balances user))
+)
+
+(define-read-only (get-daily-limit-remaining (user principal))
+    (let ((current-day (/ block-height u144))
+          (current-total (default-to u0 
+            (map-get? daily-limits {user: user, day: current-day}))))
+        (- MAX-DAILY-LIMIT current-total)
+	)
+)
+
+(define-read-only (get-contract-status)
+    {paused: (var-get contract-paused),
+     initialized: (var-get initialized)}
+)
