@@ -122,7 +122,7 @@
 )
 
 (define-private (check-daily-limit (user principal) (amount uint))
-    (let ((current-day (/ block-height u144))
+    (let ((current-day (/ stacks-block-height u144))
           (current-total (default-to u0 
             (map-get? daily-limits {user: user, day: current-day}))))
         (asserts! (<= (+ current-total amount) MAX-DAILY-LIMIT) 
@@ -132,7 +132,7 @@
 )
 
 (define-private (update-daily-limit (user principal) (amount uint))
-    (let ((current-day (/ block-height u144)))
+    (let ((current-day (/ stacks-block-height u144)))
         (map-set daily-limits 
             {user: user, day: current-day}
             (+ (default-to u0 
@@ -143,7 +143,7 @@
 
 (define-private (check-cooling-period (wallet principal))
     (let ((wallet-data (unwrap! (map-get? multi-sig-wallets wallet) ERR-NOT-AUTHORIZED)))
-        (asserts! (>= block-height (+ (get last-activity wallet-data) COOLING-PERIOD))
+        (asserts! (>= stacks-block-height (+ (get last-activity wallet-data) COOLING-PERIOD))
             ERR-COOLING-PERIOD)
         (ok true)
 	)
@@ -330,7 +330,7 @@
             {threshold: threshold,
              total-signers: (len signers),
              active: true,
-             last-activity: block-height})
+             last-activity: stacks-block-height})
         
         (map-set signer-permissions
             {wallet: wallet-principal, signer: tx-sender}
@@ -362,7 +362,7 @@
 )
 
 (define-read-only (get-daily-limit-remaining (user principal))
-    (let ((current-day (/ block-height u144))
+    (let ((current-day (/ stacks-block-height u144))
           (current-total (default-to u0 
             (map-get? daily-limits {user: user, day: current-day}))))
         (- MAX-DAILY-LIMIT current-total)
